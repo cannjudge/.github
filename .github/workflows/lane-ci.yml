@@ -1,0 +1,84 @@
+name: lane-ci
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        type: string
+        default: "3.11"
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+      - name: 语法（py/sh）
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib, sys
+          bad=[]
+          for p in pathlib.Path('.').rglob('*.py'):
+              if '.git' in p.parts: continue
+              try: compile(p.read_text(encoding='utf-8', errors='replace'), str(p), 'exec')
+              except Exception as e: bad.append(f'{p}: {e}')
+          print('\n'.join(bad)); sys.exit(1 if bad else 0)
+          PY
+          while IFS= read -r -d '' f; do bash -n "$f" || exit 1; done < <(find . -name '*.sh' -not -path './.git/*' -print0)
+      - name: JSON / 生成块 / 指令入口
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, pathlib, re, sys
+          errs=[]
+          for p in pathlib.Path('.').rglob('*.json'):
+              if '.git' in p.parts: continue
+              try: json.loads(p.read_text(encoding='utf-8'))
+              except Exception as e: errs.append(f'{p}: {e}')
+          for p in pathlib.Path('.').rglob('*.md'):
+              if '.git' in p.parts or 'docs/archive' in p.as_posix(): continue
+              t=p.read_text(encoding='utf-8', errors='replace')
+              if ('BEGIN GENERATED' in t) != ('END GENERATED' in t):
+                  errs.append(f'{p}: 生成块不配对')
+          if pathlib.Path('CLAUDE.md').is_file() and pathlib.Path('CLAUDE.md').read_text().strip() != '@AGENTS.md':
+              errs.append('CLAUDE.md 必须只含 @AGENTS.md')
+          print('\n'.join(errs)); sys.exit(1 if errs else 0)
+          PY
+      - name: 相对链接
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import pathlib, re, sys
+          ignore={'PROBLEM_API.md','leaderboard_snapshot.json'}
+          bad=[]
+          for p in pathlib.Path('.').rglob('*.md'):
+              if '.git' in p.parts or 'docs/archive' in p.as_posix(): continue
+              t=p.read_text(encoding='utf-8', errors='replace')
+              for m in re.finditer(r'\[[^\]]*\]\(([^)#]+)(?:#[^)]*)?\)', t):
+                  x=m.group(1).strip()
+                  if x.startswith(('http://','https://','mailto:','#')): continue
+                  if x.startswith('/') or x in ignore or x.startswith('template/'): continue
+                  if not (p.parent/x).exists(): bad.append(f'{p} -> {x}')
+          print('\n'.join(bad)); sys.exit(1 if bad else 0)
+          PY
+      - name: 凭据扫描（只报路径，不打印值）
+        shell: bash
+        run: |
+          set -euo pipefail
+          # 真实 JWT / PAT 形态；文档里的占位符和 .example 不算
+          if git grep -nE 'cannjudge_auth[[:space:]]*=[[:space:]]*ey[A-Za-z0-9._-]{20,}|CANNJUDGE_COOKIE[[:space:]]*=[[:space:]]*['"'"'"]?ey[A-Za-z0-9._-]{20,}|ghp_[A-Za-z0-9]{20,}' \
+               -- ':!*.example' ':!docs/archive/**' > /tmp/secret_hits 2>/dev/null; then
+            echo "发现疑似 tracked 凭据（值未输出）："
+            cut -d: -f1 /tmp/secret_hits | sort -u
+            exit 1
+          fi
+          echo "no tracked credential pattern"
