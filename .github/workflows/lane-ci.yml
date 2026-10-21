@@ -66,7 +66,8 @@ jobs:
               for m in re.finditer(r'\[[^\]]*\]\(([^)#]+)(?:#[^)]*)?\)', t):
                   x=m.group(1).strip()
                   if x.startswith(('http://','https://','mailto:','#')): continue
-                  if x.startswith('/') or x in ignore or x.startswith('template/'): continue
+                  base=x.rsplit('/',1)[-1]
+                  if x.startswith('/') or base in ignore or x.startswith('template/'): continue
                   if not (p.parent/x).exists(): bad.append(f'{p} -> {x}')
           print('\n'.join(bad)); sys.exit(1 if bad else 0)
           PY
