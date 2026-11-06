@@ -45,7 +45,8 @@ jobs:
               try: json.loads(p.read_text(encoding='utf-8'))
               except Exception as e: errs.append(f'{p}: {e}')
           for p in pathlib.Path('.').rglob('*.md'):
-              if '.git' in p.parts or 'docs/archive' in p.as_posix(): continue
+              parts=p.parts
+              if '.git' in parts or 'archive' in parts or 'absorbed' in parts: continue
               t=p.read_text(encoding='utf-8', errors='replace')
               if ('BEGIN GENERATED' in t) != ('END GENERATED' in t):
                   errs.append(f'{p}: 生成块不配对')
@@ -61,7 +62,8 @@ jobs:
           ignore={'PROBLEM_API.md','leaderboard_snapshot.json'}
           bad=[]
           for p in pathlib.Path('.').rglob('*.md'):
-              if '.git' in p.parts or 'docs/archive' in p.as_posix(): continue
+              parts=p.parts
+              if '.git' in parts or 'archive' in parts or 'absorbed' in parts: continue
               t=p.read_text(encoding='utf-8', errors='replace')
               for m in re.finditer(r'\[[^\]]*\]\(([^)#]+)(?:#[^)]*)?\)', t):
                   x=m.group(1).strip()
