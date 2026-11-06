@@ -16,18 +16,12 @@
 
 ## 赛事归档结构
 
-| 前缀 / 仓库 | 含义 |
-|------|------|
-| `cann-2026-challenge-` | CANN 主赛题 |
-| `cann-2026-ladder-` | CANN 天梯赛题 |
-| `cann-2026-power-` | CANN 电力专场 |
-| `cann-shared-infra` | 跨题共用的设备调度、提交校验、技能与规范 |
-| `arena-ledger` | 台账：题目、状态、账号与成绩（私有） |
-| `cann-rankwatch` | 榜单观察：公开排名快照与变动记录（私有） |
-| `cann-ops-playbook` | 跨题算子优化知识库：设计模式、检查表、测量口径与判决模板（私有） |
-| `flagos-s2-*` | FlagOS S2 赛道工作区（私有） |
-| `kunpeng-*` | Kunpeng HPC 挑战赛工作区 |
-| `muse-spark-*` | Muse Spark Open Kernel Challenge 工作区（私有） |
+| 类别 | 内容 | 可见性 |
+|------|------|--------|
+| 公开赛道 | `race`、`kunpeng-*` 等可复现练习与研究 | public |
+| 私有赛事工作区 | CANN / FlagOS / Muse 的赛期实现、构建脚本与提交记录 | private，不列举具体仓库名 |
+| 私有工具层 | 设备调度、提交校验、技能快照与跨题规范 | private |
+| 私有台账与知识库 | 题目状态、账号映射、成绩快照与赛后复盘 | private |
 
 私有赛事仓只用于个人与协作团队的赛事记录；公开主页不复制账号、提交记录、榜单快照或未脱敏题面。
 
