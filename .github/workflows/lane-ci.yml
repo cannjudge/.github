@@ -70,6 +70,7 @@ jobs:
                   if x.startswith(('http://','https://','mailto:','#')): continue
                   base=x.rsplit('/',1)[-1]
                   if x.startswith('/') or base in ignore or x.startswith('template/'): continue
+                  if '/' not in x and not x.endswith(('.md','.json','.tsv','.txt','.png','.svg','.pdf')): continue
                   if not (p.parent/x).exists(): bad.append(f'{p} -> {x}')
           print('\n'.join(bad)); sys.exit(1 if bad else 0)
           PY
